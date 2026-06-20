@@ -1,39 +1,98 @@
 # ESP系列 48V新能源电动车监测板
 
 #### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+这是一个基于 ESP8266 的 48V 新能源电动车监测与保护系统。通过多种传感器采集电池电压、电流、温度、湿度等数据，实时显示在 OLED 屏幕上，并通过 Blinker 云平台与手机 APP 联动，支持远程监控和控制。该系统集成了自动保护机制，可以有效保护电池和系统安全。
 
 #### 软件架构
-软件架构说明
+
+**主控制器：** ESP8266 Wi-Fi 微控制器
+
+**传感器模块：**
+- INA226：电流/电压/功率监测传感器
+- DHT11：温湿度传感器
+- NTC：控制器温度测量
+
+**显示模块：** SSD1306 OLED 显示屏（128x64）
+
+**云平台：** Blinker IoT 云平台 + 手机 APP
+
+**核心功能：**
+- 实时采集电压、电流、功率、能量、温度、湿度
+- OLED 屏幕轮播显示监测数据
+- Blinker APP 远程监控和控制
+- 手动/自动输出控制模式
+- 多重安全保护（低压、高压、过温、过流）
+- 蜂鸣器报警提示
 
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+**硬件准备：**
+1. ESP8266 开发板
+2. INA226 电流/电压传感器模块
+3. DHT11 温湿度传感器
+4. SSD1306 OLED 显示屏（128x64）
+5. NTC 温度传感器
+6. 蜂鸣器、LED、按钮等外设
+7. 48V 电源输入电路（分压）
+
+**软件依赖：**
+1. Arduino IDE 或 PlatformIO
+2. ESP8266 Arduino 支持包（版本 2.5.0 或以上）
+3. 必要的库文件：
+   - Blinker（物联网云平台库）
+   - DHT（温湿度传感器库）
+   - INA226（电流/电压传感器库）
+   - U8g2（OLED 显示库）
+   - NTPClient（网络时间协议库）
+
+**编译和上传：**
+1. 在 Arduino IDE 中打开 `wireless_meter.ino` 文件
+2. 安装所需的库文件
+3. 配置 WiFi 和 Blinker 认证信息
+4. 选择 ESP8266 开发板型号和串口
+5. 编译并上传到 ESP8266
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+**功能特性：**
+1. **实时监测**：显示总线电压、分流电流、功率、累计能量、温度、湿度等
+2. **数据存储**：记录峰值功率、峰值电流和累计能量消耗
+3. **OLED 显示**：轮播显示各项参数、警报信息、时间和剩余里程
+4. **Blinker APP 控制**：
+   - 查看实时数据和历史数据
+   - 手动开关输出
+   - 自动/手动模式切换
+   - 屏幕开关控制
+   - 数据清零
+   - 设备重启
+5. **语音控制**：支持小爱同学语音控制（需要配置 Blinker Miot）
+6. **多重保护**：
+   - 低压保护：电压 < 42.9V 时自动断开输出并报警
+   - 高压保护：电压 > 55.9V 时自动断开输出并报警
+   - 过温保护：电池温度 > 55°C 时自动断开输出
+   - 过流保护：充电/放电电流超限时自动断开输出
+7. **报警提示**：蜂鸣器按不同频率提示不同告警状态
+
+**主要参数配置：**
+- WiFi SSID 和密码
+- Blinker 认证密钥
+- NTP 服务器地址
+- 电池最大容量（设置总里程）
+- 分压电路分压比例
 
 #### 参与贡献
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1. Fork 本仓库
+2. 创建新的功能分支 (`git checkout -b feature/新功能`)
+3. 提交你的修改 (`git commit -am '添加新功能'`)
+4. 推送分支 (`git push origin feature/新功能`)
+5. 提交 Pull Request
 
+#### 许可证
 
-#### 特技
+该项目采用开源许可证发布，详见 LICENSE 文件。
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+#### 反馈和支持
+
+如有问题或建议，欢迎提交 Issue 或联系项目维护者。
