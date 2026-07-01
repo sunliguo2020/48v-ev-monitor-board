@@ -3,6 +3,14 @@
 #### 介绍
 这是一个基于 ESP8266 的 48V 新能源电动车监测与保护系统。通过多种传感器采集电池电压、电流、温度、湿度等数据，实时显示在 OLED 屏幕上，并通过 Blinker 云平台与手机 APP 联动，支持远程监控和控制。该系统集成了自动保护机制，可以有效保护电池和系统安全。
 
+原作者： [zhou1236](https://oshwhub.com/zhou1236) 
+
+硬件开源地址： [2、电动车100V - 立创开源硬件平台](https://oshwhub.com/zhou1236/2-dian-dong-che-100v) 
+
+软件开源地址： [ESP系列 48V新能源电动车监测板: 电动车电池监测 新国标 48V](https://gitee.com/zhouzhou12368/esp-8266) 
+
+<img src="images/fkMxOB0Zxmu8QReNqlvLMNNXrFPXHYWoatkoSelo.jpeg" style="zoom:50%;" />
+
 #### 软件架构
 
 **主控制器：** ESP8266 Wi-Fi 微控制器
@@ -52,6 +60,14 @@
 3. 配置 WiFi 和 Blinker 认证信息
 4. 选择 ESP8266 开发板型号和串口
 5. 编译并上传到 ESP8266
+
+**WiFi 配网说明：**
+1. 设备上电后会优先尝试读取已保存的 WiFi SSID、密码和 Blinker Auth。
+2. 若首次运行或连接失败，将自动进入配网模式。
+3. 配网模式下，设备会启动 WiFi 热点：`EVMeter_Config`。
+4. 连接该热点后，在浏览器中访问 `http://192.168.4.1/`。
+5. 在网页中填写 WiFi 名称、密码和 Blinker Auth，并提交保存。
+6. 保存后设备会自动重启并使用新的配网信息连接 WiFi。
 
 #### 使用说明
 
