@@ -1467,16 +1467,16 @@ bool connectWiFi()
 
 void handleRoot()
 {
-  String page = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>EV Meter 配网</title></head><body>";
+  String page = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\"><title>EV Meter 配网</title><style>body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#223;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;box-sizing:border-box;} .card{width:min(100%,420px);background:#fff;padding:20px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.12);} h2{margin-top:0;font-size:22px;text-align:center;} label{display:block;margin-bottom:6px;font-weight:600;} input[type=text]{width:100%;padding:10px 12px;border:1px solid #cfd8e3;border-radius:8px;margin-bottom:12px;box-sizing:border-box;font-size:16px;} input[type=submit]{width:100%;padding:12px;border:none;border-radius:8px;background:#1e88e5;color:#fff;font-size:16px;} p{font-size:14px;color:#667;line-height:1.5;}</style></head><body><div class=\"card\">";
   page += "<h2>EV Meter WiFi 配置</h2>";
   page += "<form action=\"/save\" method=\"get\">";
-  page += "SSID:<br><input type=\"text\" name=\"ssid\" value=\"" + String(ssid) + "\"><br><br>";
-  page += "Password:<br><input type=\"text\" name=\"pswd\" value=\"" + String(pswd) + "\"><br><br>";
-  page += "Blinker Auth:<br><input type=\"text\" name=\"auth\" value=\"" + String(auth) + "\"><br><br>";
+  page += "<label>SSID</label><input type=\"text\" name=\"ssid\" value=\"" + String(ssid) + "\">";
+  page += "<label>Password</label><input type=\"text\" name=\"pswd\" value=\"" + String(pswd) + "\">";
+  page += "<label>Blinker Auth</label><input type=\"text\" name=\"auth\" value=\"" + String(auth) + "\">";
   page += "<input type=\"submit\" value=\"保存并重启\">";
   page += "</form>";
   page += "<p>保存后设备将重启并尝试连接 WiFi。</p>";
-  page += "</body></html>";
+  page += "</div></body></html>";
   server.send(200, "text/html", page);
 }
 
