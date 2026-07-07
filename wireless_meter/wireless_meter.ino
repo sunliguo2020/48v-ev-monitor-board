@@ -39,11 +39,12 @@
 #include <WiFiUdp.h>
 #include "Gif.h"
 
-#define EEPROM_SIZE 256
-#define WIFI_CONFIG_FLAG_ADDR 0
-#define WIFI_CONFIG_SSID_ADDR 1
-#define WIFI_CONFIG_PASS_ADDR 33
-#define WIFI_CONFIG_AUTH_ADDR 97
+#define EEPROM_SIZE 4096
+// Place WiFi config well above Blinker-used ranges (Blinker uses 0-2431)
+#define WIFI_CONFIG_FLAG_ADDR 3000
+#define WIFI_CONFIG_SSID_ADDR 3001
+#define WIFI_CONFIG_PASS_ADDR 3033
+#define WIFI_CONFIG_AUTH_ADDR 3097
 #define WIFI_CONFIG_MAX_SSID 32
 #define WIFI_CONFIG_MAX_PASS 64
 #define WIFI_CONFIG_MAX_AUTH 32
@@ -1355,12 +1356,13 @@ String readStringFromEEPROM(int addr, int maxLen)
     maxLen = 64;
   }
   char buf[65];
+  memset(buf, 0, sizeof(buf));
   for (int i = 0; i < maxLen; ++i)
   {
     buf[i] = EEPROM.read(addr + i);
     if (buf[i] == 0)
     {
-      buf[i] = 0;
+      // found terminator
       break;
     }
   }
@@ -1387,15 +1389,25 @@ void writeStringToEEPROM(int addr, int maxLen, const char *value)
 bool loadWiFiConfig()
 {
   EEPROM.begin(EEPROM_SIZE);
-  if (EEPROM.read(WIFI_CONFIG_FLAG_ADDR) != 0xA5)
+  byte flag = EEPROM.read(WIFI_CONFIG_FLAG_ADDR);
+  Serial.print("EEPROM flag: 0x");
+  Serial.println(flag, HEX);
+  if (flag != 0xA5)
   {
+    EEPROM.end();
     return false;
   }
   String storedSsid = readStringFromEEPROM(WIFI_CONFIG_SSID_ADDR, WIFI_CONFIG_MAX_SSID);
   String storedPass = readStringFromEEPROM(WIFI_CONFIG_PASS_ADDR, WIFI_CONFIG_MAX_PASS);
   String storedAuth = readStringFromEEPROM(WIFI_CONFIG_AUTH_ADDR, WIFI_CONFIG_MAX_AUTH);
+  Serial.println("Loaded WiFi config from EEPROM:");
+  Serial.print("  SSID: "); Serial.println(storedSsid);
+  Serial.print("  PASS: "); Serial.println(storedPass);
+  Serial.print("  AUTH: "); Serial.println(storedAuth);
   if (storedSsid.length() == 0 || storedPass.length() == 0)
   {
+    EEPROM.end();
+    Serial.println("Stored SSID or PASS empty");
     return false;
   }
   storedSsid.toCharArray(ssid, WIFI_CONFIG_MAX_SSID);
@@ -1404,6 +1416,8 @@ bool loadWiFiConfig()
   {
     storedAuth.toCharArray(auth, WIFI_CONFIG_MAX_AUTH);
   }
+  EEPROM.end();
+  Serial.println("WiFi config loaded OK");
   return true;
 }
 
@@ -1414,7 +1428,18 @@ void saveWiFiConfig(const char *newSsid, const char *newPass, const char *newAut
   writeStringToEEPROM(WIFI_CONFIG_PASS_ADDR, WIFI_CONFIG_MAX_PASS, newPass);
   writeStringToEEPROM(WIFI_CONFIG_AUTH_ADDR, WIFI_CONFIG_MAX_AUTH, newAuth);
   EEPROM.write(WIFI_CONFIG_FLAG_ADDR, 0xA5);
-  EEPROM.commit();
+  bool ok = EEPROM.commit();
+  Serial.println();
+  Serial.println("Saving WiFi config...");
+  Serial.print("  SSID: ");
+  Serial.println(newSsid);
+  Serial.print("  PASS: ");
+  Serial.println(newPass);
+  Serial.print("  AUTH: ");
+  Serial.println(newAuth);
+  Serial.print("  commit: ");
+  Serial.println(ok ? "OK" : "FAILED");
+  EEPROM.end();
 }
 
 bool connectWiFi()
@@ -1527,6 +1552,10 @@ void setup()
     Serial.println("没有存储的 WiFi 配置，进入配网模式...");
     startConfigPortal();
   }
+  Serial.print("Using SSID: ");
+  Serial.println(ssid);
+  Serial.print("Using PASS: ");
+  Serial.println(pswd);
   if (!connectWiFi())
   {
     Serial.println("WiFi 连接失败，进入配网模式...");
@@ -1539,6 +1568,7 @@ void setup()
   pinMode(D6, OUTPUT);
   digitalWrite(D6, HIGH);
   pinMode(D7, OUTPUT);
+  // 蜂鸣器
   pinMode(D5, OUTPUT);
   digitalWrite(D5, LOW);
   Button2.attach(button2_callback); // 绑定按键回调
