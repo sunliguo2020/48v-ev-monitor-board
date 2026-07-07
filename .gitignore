@@ -1,0 +1,58 @@
+# Arduino 编译临时文件
+*.hex
+*.bin
+*.elf
+*.map
+*.srec
+*.lst
+*.o
+*.d
+*.i
+*.asm
+*.cpp.elf
+*.ino.elf
+*.ino.bin
+build-*/
+arduino_build_*
+arduino_cache_*
+
+# Arduino 导出临时文件
+*.tar.gz
+*.zip
+
+# 串口、编辑器缓存
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# VSCode / PlatformIO 相关（如果你用）
+.vscode/
+.vs/
+*.code-workspace
+.pio/
+pioenvs/
+piolibdeps/
+
+# Arduino 本地库缓存、项目私有配置
+private_config.h
+wifi_config.h
+blinker_key.h
+secret.h
+
+# data文件夹资源（可选：如果图片字体不想上传就放开）
+# data/*.bmp
+# data/*.gif
+# data/*.font
+
+# Windows 系统垃圾
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# esptool 烧录日志
+flash_log.txt
