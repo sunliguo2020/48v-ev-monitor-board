@@ -38,6 +38,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "Gif.h"
+#include "i2c_scanner.h"
 
 #define EEPROM_SIZE 4096
 // Place WiFi config well above Blinker-used ranges (Blinker uses 0-2431)
@@ -122,6 +123,7 @@ float humi_read = 0, temp_read = 0;
 
 /*****************/
 #include <Arduino.h>
+#include <Wire.h>
 #include <INA226.h>
 
 #include <U8g2lib.h>
@@ -140,6 +142,7 @@ float ShuntCurrent;
 float BusPower;
 float BusPower2;
 float CapaPower = 0;
+bool ina226Ready = false;
 float Da;
 float Sa;
 float BusPower1;
@@ -1541,6 +1544,62 @@ void show_gif(int i)
   u8g2.sendBuffer();
 }
 /**********GIF动画显示********/
+bool initINA226()
+{
+  Serial.println("Initializing INA226...");
+  Wire.begin();
+  delay(100);
+
+  Wire.beginTransmission(0x44);
+  uint8_t error = Wire.endTransmission();
+  if (error != 0)
+  {
+    Serial.print("INA226 init failed: I2C address 0x44 no response, error=");
+    Serial.println(error);
+    scanI2CDevices();
+    return false;
+  }
+
+  Serial.println("INA226 answered on I2C at 0x44");
+
+  Wire.beginTransmission(0x44);
+  Wire.write(0x00);
+  error = Wire.endTransmission(false);
+  if (error != 0)
+  {
+    Serial.print("INA226 config register access failed, error=");
+    Serial.println(error);
+    return false;
+  }
+
+  Wire.requestFrom(0x44, (uint8_t)2);
+  if (Wire.available() < 2)
+  {
+    Serial.println("INA226 config register read timeout");
+    return false;
+  }
+
+  uint16_t configReg = ((uint16_t)Wire.read() << 8) | Wire.read();
+  Serial.print("INA226 config register = 0x");
+  Serial.println(configReg, HEX);
+
+  ina.begin();
+  delay(100);
+  ina.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_1100US, INA226_SHUNT_CONV_TIME_1100US, INA226_MODE_SHUNT_BUS_CONT);
+  ina.calibrate(0.002, 40);
+  delay(100);
+
+  float rawVoltage = ina.readBusVoltage();
+  Serial.print("INA226 raw bus voltage = ");
+  Serial.print(rawVoltage, 4);
+  Serial.println(" V");
+  Serial.print("INA226 scaled bus voltage = ");
+  Serial.print(rawVoltage * Vscale, 4);
+  Serial.println(" V");
+
+  return true;
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -1586,17 +1645,16 @@ void setup()
   Serial.println("Initialize INA226");
   Serial.println("-----------------------------------------------");
 
-  // Default INA226 address is 0x40
-  ina.begin();
-
-  // Configure INA226
-  ina.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_1100US, INA226_SHUNT_CONV_TIME_1100US, INA226_MODE_SHUNT_BUS_CONT);
-
-  // Calibrate INA226. Rshunt = 0.0005 ohm, Max excepted current =40A
-  ina.calibrate(0.002, 40);
-
-  // Display configuration
-  checkConfig();
+  ina226Ready = initINA226();
+  if (ina226Ready)
+  {
+    // Display configuration
+    checkConfig();
+  }
+  else
+  {
+    Serial.println("INA226 initialization failed, please check I2C wiring, power and address.");
+  }
 
   Serial.println("-----------------------------------------------");
 
