@@ -1583,7 +1583,7 @@ bool initINA226()
   Serial.print("INA226 config register = 0x");
   Serial.println(configReg, HEX);
 
-  ina.begin();
+  ina.begin(0x44);
   delay(100);
   ina.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_1100US, INA226_SHUNT_CONV_TIME_1100US, INA226_MODE_SHUNT_BUS_CONT);
   ina.calibrate(0.002, 40);
@@ -1695,7 +1695,7 @@ void loop()
 
   Runtime();
   time2 = millis();
-  if ((time2 - time1) >= 10)
+  if ((time2 - time1) >= 200)
   {
     BusVoltage = (ina.readBusVoltage() * Vscale);
     ShuntCurrent = ina.readShuntCurrent();
