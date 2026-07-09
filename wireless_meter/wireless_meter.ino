@@ -230,7 +230,29 @@ const unsigned char Image15[] U8X8_PROGMEM = {
 const unsigned char Imagecharge[] U8X8_PROGMEM = {
     0x00, 0x08, 0x00, 0x00, 0x0C, 0x00, 0xFE, 0xFF, 0x03, 0x02, 0x0F, 0x02, 0x83, 0x0F, 0x02, 0xC3, 0x7F, 0x02,
     0xE3, 0x3F, 0x02, 0x03, 0x1F, 0x02, 0x02, 0x0F, 0x02, 0xFE, 0xFF, 0x03, 0x00, 0x03, 0x00, 0x00, 0x01, 0x00}; // 充电图标（实心）
-
+/**
+ * @brief  屏幕开关控制回调函数
+ *
+ *        用于响应 Blinker APP 中 Button9 按键的状态变化，
+ *        根据按键状态控制 OLED/LCD 屏幕显示或关闭。
+ *
+ *        当按钮状态为 "on" 时：
+ *          - 设置显示模式为正常显示模式
+ *          - 提示屏幕已打开
+ *          - 更新 APP 中按钮状态
+ *
+ *        当按钮状态为 "off" 时：
+ *          - 设置显示模式为关闭模式
+ *          - 清空屏幕缓存并刷新屏幕
+ *          - 提示屏幕已关闭
+ *          - 更新 APP 中按钮状态
+ *
+ * @param state9  Blinker Button9 控件返回的状态字符串
+ *                "on"  ：打开屏幕
+ *                "off" ：关闭屏幕
+ *
+ * @return 无
+ */
 void button9_callback(const String &state9) // 屏幕开关
 {
   BLINKER_LOG("get button state: ", state9); // APP中的Monitor控件打印的信息
@@ -419,6 +441,39 @@ void miotPowerState(const String &state2)
   }
 }
 
+/**
+ * @brief  检查并打印 INA226 当前配置参数
+ *
+ *        读取 INA226 电流/电压检测芯片的当前工作配置，
+ *        并通过串口输出以下信息：
+ *
+ *        1. ADC 工作模式
+ *           - 关闭模式
+ *           - 单次采样模式
+ *           - 连续采样模式
+ *
+ *        2. ADC 平均采样次数
+ *           - 1次 ~ 1024次
+ *
+ *        3. 总线电压转换时间
+ *
+ *        4. 分流电压转换时间
+ *
+ *        5. 当前量程相关参数
+ *           - 最大可测电流
+ *           - 最大电流
+ *           - 最大分流电压
+ *           - 最大功率
+ *
+ *        该函数主要用于：
+ *          - INA226初始化调试
+ *          - 检查配置是否正确
+ *          - 排查电流、电压测量异常问题
+ *
+ * @param 无
+ *
+ * @return 无
+ */
 void checkConfig()
 {
   Serial.print("Mode:                  ");
@@ -452,6 +507,14 @@ void checkConfig()
     Serial.println("unknown");
   }
 
+   /**********************************************
+   * 输出 ADC 平均采样次数
+   *
+   * 平均次数越高：
+   *   - 数据越稳定
+   *   - 噪声越小
+   *   - 转换时间越长
+   **********************************************/
   Serial.print("Samples average:       ");
   switch (ina.getAverages())
   {
@@ -651,7 +714,6 @@ void dataStorage()
   Blinker.dataStorage("datahumi1", humi_read);
 }
 
-/*****************/
 /**********按键回调内容上传函数********/
 void dataRead(const String &data)
 {
