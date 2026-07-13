@@ -38,6 +38,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "Gif.h"
+#include "DisplayGif.h"
 #include "i2c_scanner.h"
 
 #define EEPROM_SIZE 4096
@@ -507,7 +508,7 @@ void checkConfig()
     Serial.println("unknown");
   }
 
-   /**********************************************
+  /**********************************************
    * 输出 ADC 平均采样次数
    *
    * 平均次数越高：
@@ -1398,15 +1399,6 @@ void connectHell()
   u8g2.sendBuffer();
   delay(1500);
 }
-/**********GIF动画换帧循环********/
-void displaygif()
-{
-  for (int i = 0; i < gif_length; ++i)
-  {
-    show_gif(i);
-    delay(10);
-  }
-}
 
 #if defined(ESP8266)
 ESP8266WebServer server(80);
@@ -1417,7 +1409,8 @@ bool configPortalActive = false;
 
 String readStringFromEEPROM(int addr, int maxLen)
 {
-  if (maxLen > 64) {
+  if (maxLen > 64)
+  {
     maxLen = 64;
   }
   char buf[65];
@@ -1466,9 +1459,12 @@ bool loadWiFiConfig()
   String storedPass = readStringFromEEPROM(WIFI_CONFIG_PASS_ADDR, WIFI_CONFIG_MAX_PASS);
   String storedAuth = readStringFromEEPROM(WIFI_CONFIG_AUTH_ADDR, WIFI_CONFIG_MAX_AUTH);
   Serial.println("Loaded WiFi config from EEPROM:");
-  Serial.print("  SSID: "); Serial.println(storedSsid);
-  Serial.print("  PASS: "); Serial.println(storedPass);
-  Serial.print("  AUTH: "); Serial.println(storedAuth);
+  Serial.print("  SSID: ");
+  Serial.println(storedSsid);
+  Serial.print("  PASS: ");
+  Serial.println(storedPass);
+  Serial.print("  AUTH: ");
+  Serial.println(storedAuth);
   if (storedSsid.length() == 0 || storedPass.length() == 0)
   {
     EEPROM.end();
@@ -1596,28 +1592,50 @@ void startConfigPortal()
   }
 }
 
-void show_gif(int i)
-{
-  u8g2.setDrawColor(1);
-  u8g2.drawBox(0, 0, 128, 64);
-  u8g2.setDrawColor(0);
-  u8g2.drawXBM(32, 0, 64, 64, gif[i]);
-  u8g2.setDrawColor(1);
-  u8g2.sendBuffer();
-}
-/**********GIF动画显示********/
+/**
+ * @brief 初始化 INA226 电流/电压检测芯片
+ *
+ * 功能：
+ * 1. 初始化 I2C 总线
+ * 2. 检测 INA226 是否响应
+ * 3. 读取 INA226 配置寄存器，确认通信正常
+ * 4. 配置 INA226 工作模式
+ * 5. 设置分流电阻参数并进行校准
+ * 6. 读取母线电压测试 INA226 工作状态
+ *
+ * @return true  初始化成功
+ * @return false 初始化失败
+ */
 bool initINA226()
 {
   Serial.println("Initializing INA226...");
+  // 初始化 I2C 总线
+  // ESP8266 默认 SDA/SCL 根据开发板定义
+  // ESP32 可以通过 Wire.begin(SDA, SCL) 指定引脚
   Wire.begin();
+  // 等待I2C外设稳定
   delay(100);
 
+  /*
+   * 检测 INA226 的 I2C 地址是否存在
+   *
+   * INA226 默认地址通常为：
+   * 0x40
+   * 如果 A0/A1 引脚配置不同，地址可能为：
+   * 0x41 / 0x44 / 0x45 等
+   *
+   * 当前程序使用 0x44
+   */
   Wire.beginTransmission(0x44);
+  // 结束一次 I2C 通信
+  // 返回 0 表示设备响应正常
   uint8_t error = Wire.endTransmission();
+  // 如果返回错误，说明 INA226 没有响应
   if (error != 0)
   {
     Serial.print("INA226 init failed: I2C address 0x44 no response, error=");
     Serial.println(error);
+    // 扫描整个 I2C 总线，帮助查找实际地址
     scanI2CDevices();
     return false;
   }
@@ -1634,7 +1652,8 @@ bool initINA226()
     return false;
   }
 
-  Wire.requestFrom(0x44, (uint8_t)2);
+  // Wire.requestFrom(0x44, (uint8_t)2);
+  Wire.requestFrom((uint8_t)0x44, (uint8_t)2);
   if (Wire.available() < 2)
   {
     Serial.println("INA226 config register read timeout");
@@ -1647,7 +1666,56 @@ bool initINA226()
 
   ina.begin(0x44);
   delay(100);
+  /*
+   * 配置 INA226 工作参数
+   *
+   * 参数说明：
+   *
+   * INA226_AVERAGES_128
+   * -------------------
+   * 内部采样平均次数：
+   * 128 次平均
+   * 优点：
+   * - 降低电流噪声
+   * - 提高稳定性
+   * INA226_BUS_CONV_TIME_1100US
+   * ---------------------------
+   * 总线电压转换时间：
+   * 1100us
+   * INA226_SHUNT_CONV_TIME_1100US
+   * -----------------------------
+   * 分流电压转换时间：
+   * 1100us
+   * INA226_MODE_SHUNT_BUS_CONT
+   * ---------------------------
+   * 连续测量模式：
+   * 同时测量：
+   * - 分流电压
+   * - 母线电压
+   */
   ina.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_1100US, INA226_SHUNT_CONV_TIME_1100US, INA226_MODE_SHUNT_BUS_CONT);
+  /*
+   * INA226 校准
+   *
+   * 参数：
+   *
+   * 0.002
+   * -----
+   * 分流电阻阻值
+   *
+   * 单位：Ω
+   *
+   * 即：2mΩ
+   * 40
+   * ---
+   * 最大测量电流
+   *
+   * 单位：A
+   *
+   * 根据实际硬件：
+   * Rsense = 2mΩ
+   * 最大电流 = 40A
+   */
   ina.calibrate(0.002, 40);
   delay(100);
 
